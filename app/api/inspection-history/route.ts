@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import type { Inspection } from '@/lib/inspection-types'
 
 export async function GET() {
-  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL
+  const SCRIPT_URL = process.env.NEXT_PUBLIC_INSPECTION_SCRIPT_URL
 
-  if (!GOOGLE_SCRIPT_URL) {
-    console.error('[v0] GOOGLE_SCRIPT_URL environment variable is not set')
+  if (!SCRIPT_URL) {
+    console.error('[v0] NEXT_PUBLIC_INSPECTION_SCRIPT_URL environment variable is not set')
     return NextResponse.json(
       { success: false, error: 'Server configuration error: Google Script URL not configured', inspections: [] },
       { status: 500 }
@@ -14,7 +14,7 @@ export async function GET() {
 
   try {
     // Append action=get to fetch inspections
-    const url = new URL(GOOGLE_SCRIPT_URL)
+    const url = new URL(SCRIPT_URL)
     url.searchParams.set('action', 'get')
 
     const response = await fetch(url.toString(), {

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL
-
 export async function DELETE(request: Request) {
-  if (!GOOGLE_SCRIPT_URL) {
+  const SCRIPT_URL = process.env.NEXT_PUBLIC_INSPECTION_SCRIPT_URL
+  
+  if (!SCRIPT_URL) {
     return NextResponse.json(
       { success: false, error: 'Google Script URL not configured' },
       { status: 500 }
@@ -21,7 +21,7 @@ export async function DELETE(request: Request) {
     }
 
     // Build URL with delete action
-    const url = new URL(GOOGLE_SCRIPT_URL)
+    const url = new URL(SCRIPT_URL)
     url.searchParams.set('action', 'delete')
     url.searchParams.set('id', String(id))
 
