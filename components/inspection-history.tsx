@@ -10,13 +10,10 @@ import { type Inspection } from '@/lib/inspection-types'
 import { WAREHOUSES, DRIVERS } from '@/lib/fleet-data'
 import { toast } from 'sonner'
 import { 
-  CheckCircle2, 
   XCircle, 
   ArrowLeft,
   Search,
   Filter,
-  Calendar,
-  Truck,
   User,
   Building2,
   AlertTriangle,
@@ -72,9 +69,7 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
   }, [])
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent expanding the card
-    
-    console.log('[v0] Attempting to delete inspection with id:', id)
+    e.stopPropagation()
     
     if (!id) {
       toast.error('Inspection ID is missing')
@@ -103,7 +98,6 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
       }
       
       toast.success('Inspection deleted')
-      // Remove from local state
       setInspections(prev => prev.filter(i => i.id !== id))
       setFilteredInspections(prev => prev.filter(i => i.id !== id))
     } catch (err) {
@@ -117,17 +111,14 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
   useEffect(() => {
     let filtered = inspections
 
-    // Filter by warehouse
     if (selectedWarehouse !== 'all') {
       filtered = filtered.filter(i => i.warehouseCode === selectedWarehouse)
     }
 
-    // Filter by driver
     if (selectedDriver !== 'all') {
       filtered = filtered.filter(i => i.driverId === selectedDriver)
     }
 
-    // Filter by status
     if (selectedStatus !== 'all') {
       if (selectedStatus === 'pass') {
         filtered = filtered.filter(i => i.overallStatus === 'pass')
@@ -138,7 +129,6 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
       }
     }
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(i => 
@@ -155,7 +145,6 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
     setExpandedInspection(prev => prev === id ? null : id)
   }
 
-  // Get drivers for selected warehouse
   const availableDrivers = selectedWarehouse === 'all' 
     ? DRIVERS 
     : DRIVERS.filter(d => d.warehouseCode === selectedWarehouse)
@@ -165,29 +154,30 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <Button variant="ghost" size="icon" onClick={onBack} className="text-muted-foreground">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Inspection History</h1>
+            <h1 className="text-xl font-bold text-foreground">Inspection History</h1>
             <p className="text-sm text-muted-foreground">
               {isLoading ? 'Loading...' : `${filteredInspections.length} of ${inspections.length} inspections`}
             </p>
           </div>
         </div>
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="icon" 
           onClick={fetchInspections}
           disabled={isLoading}
+          className="text-muted-foreground"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-3 space-y-3">
+      <Card className="border-border">
+        <CardContent className="p-4 space-y-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -195,16 +185,18 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
               placeholder="Search vehicle, driver, location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-10 h-10"
             />
           </div>
           
           {/* Filter row */}
           <div className="grid grid-cols-3 gap-2">
             <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-              <SelectTrigger className="h-9 text-xs">
-                <Building2 className="w-3 h-3 mr-1" />
-                <SelectValue placeholder="Location" />
+              <SelectTrigger className="h-10">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <SelectValue placeholder="All Locations" />
+                </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
@@ -217,9 +209,11 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
             </Select>
 
             <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-              <SelectTrigger className="h-9 text-xs">
-                <User className="w-3 h-3 mr-1" />
-                <SelectValue placeholder="Driver" />
+              <SelectTrigger className="h-10">
+                <div className="flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <SelectValue placeholder="All Drivers" />
+                </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Drivers</SelectItem>
@@ -232,9 +226,11 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
             </Select>
 
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="h-9 text-xs">
-                <Filter className="w-3 h-3 mr-1" />
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="h-10">
+                <div className="flex items-center gap-1.5">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <SelectValue placeholder="All Status" />
+                </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -250,75 +246,61 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
       {/* Inspection List */}
       <div className="space-y-2">
         {isLoading ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <Loader2 className="w-12 h-12 mx-auto mb-2 animate-spin opacity-50" />
-              <p className="text-sm">Loading inspections...</p>
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Loading inspections...</p>
             </CardContent>
           </Card>
         ) : error ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-red-500 opacity-50" />
-              <p className="text-sm text-red-600">{error}</p>
-              <Button variant="outline" size="sm" onClick={fetchInspections} className="mt-3">
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-destructive opacity-70" />
+              <p className="text-sm text-destructive font-medium">{error}</p>
+              <Button variant="outline" size="sm" onClick={fetchInspections} className="mt-4">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retry
               </Button>
             </CardContent>
           </Card>
         ) : filteredInspections.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No inspections found</p>
-              <p className="text-xs">Try adjusting your filters</p>
+          <Card className="border-border">
+            <CardContent className="p-8 text-center">
+              <Search className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+              <p className="text-sm font-medium text-foreground">No inspections found</p>
+              <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters</p>
             </CardContent>
           </Card>
         ) : (
           filteredInspections.map(inspection => (
-            <Card key={inspection.id} className={inspection.overallStatus === 'fail' ? 'border-red-200' : ''}>
+            <Card key={inspection.id} className="border-border overflow-hidden">
               <CardContent className="p-0">
                 {/* Summary row */}
                 <button
                   onClick={() => toggleExpanded(inspection.id)}
-                  className="w-full p-3 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-full ${
-                      inspection.overallStatus === 'pass' ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      {inspection.overallStatus === 'pass' ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-600" />
-                      )}
+                    <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                      <div className={`w-2 h-2 rounded-full ${
+                        inspection.overallStatus === 'pass' ? 'bg-red-400' : 'bg-red-500'
+                      }`} />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{inspection.vehicleName}</span>
-                        {inspection.lightsStatus === 'fail' && (
-                          <Badge variant="destructive" className="text-[10px] px-1 py-0">
-                            <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-                            Lights
-                          </Badge>
-                        )}
-                      </div>
+                      <div className="font-medium text-sm text-foreground">{inspection.vehicleName}</div>
                       <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {inspection.driverName}
+                        <span>{inspection.driverName}</span>
                         <span className="mx-1">•</span>
-                        <Calendar className="w-3 h-3" />
-                        {inspection.date}
+                        <span>{inspection.date || inspection.submittedAt?.split('T')[0]}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="font-mono text-sm font-medium">{inspection.score ?? 100}%</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {inspection.warehouseCode}
-                      </div>
+                      <div className="font-mono text-sm font-semibold text-foreground">{inspection.score ?? 100}%</div>
+                      {inspection.warehouseCode && (
+                        <div className="text-xs text-muted-foreground">{inspection.warehouseCode}</div>
+                      )}
                     </div>
                     {expandedInspection === inspection.id ? (
                       <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -330,60 +312,70 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
 
                 {/* Expanded details */}
                 {expandedInspection === inspection.id && (
-                  <div className="px-3 pb-3 pt-1 border-t bg-muted/30">
+                  <div className="px-4 pb-4 pt-2 border-t border-border bg-muted/20">
                     {/* Meta info */}
                     <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                      <div className="p-2 bg-background rounded">
-                        <div className="text-muted-foreground">Mileage</div>
-                        <div className="font-mono font-medium">
+                      <div className="p-2.5 bg-background rounded-lg border border-border">
+                        <div className="text-muted-foreground mb-0.5">Mileage</div>
+                        <div className="font-mono font-medium text-foreground">
                           {(inspection.mileage ?? 0).toLocaleString()} mi
                         </div>
                       </div>
-                      <div className="p-2 bg-background rounded">
-                        <div className="text-muted-foreground">Time</div>
-                        <div className="font-medium">{inspection.time}</div>
+                      <div className="p-2.5 bg-background rounded-lg border border-border">
+                        <div className="text-muted-foreground mb-0.5">Time</div>
+                        <div className="font-medium text-foreground">{inspection.time}</div>
                       </div>
-                      <div className="p-2 bg-background rounded">
-                        <div className="text-muted-foreground">Location</div>
-                        <div className="font-medium">{inspection.warehouseName}</div>
+                      <div className="p-2.5 bg-background rounded-lg border border-border">
+                        <div className="text-muted-foreground mb-0.5">Location</div>
+                        <div className="font-medium text-foreground">{inspection.warehouseName}</div>
                       </div>
-                      <div className="p-2 bg-background rounded">
-                        <div className="text-muted-foreground">Items</div>
+                      <div className="p-2.5 bg-background rounded-lg border border-border">
+                        <div className="text-muted-foreground mb-0.5">Items</div>
                         <div className="font-medium">
-                          <span className="text-green-600">{inspection.passedItems ?? 0}✓</span>
+                          <span className="text-green-600">{inspection.passedItems ?? 0} passed</span>
                           {' / '}
-                          <span className="text-red-600">{inspection.failedItems ?? 0}✗</span>
+                          <span className="text-red-600">{inspection.failedItems ?? 0} failed</span>
                         </div>
                       </div>
                     </div>
 
+                    {/* Lights warning */}
+                    {inspection.lightsStatus === 'fail' && (
+                      <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                        <div className="flex items-center gap-2 text-red-700">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span className="text-sm font-medium">Warning lights active</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Failed items */}
                     {(inspection.failedItems ?? 0) > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 mb-3">
                         <div className="text-xs font-medium text-red-700 flex items-center gap-1">
-                          <XCircle className="w-3 h-3" />
+                          <XCircle className="w-3.5 h-3.5" />
                           Failed Items ({inspection.failedItems ?? 0})
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {inspection.sections ? inspection.sections.flatMap(section =>
                             section.items
                               .filter(item => item.status === 'fail')
                               .map(item => (
                                 <div 
                                   key={item.id} 
-                                  className="p-2 bg-red-50 rounded text-xs border border-red-100"
+                                  className="p-2.5 bg-red-50 rounded-lg text-xs border border-red-100"
                                 >
                                   <div className="font-medium text-red-800">{item.label}</div>
-                                  <div className="text-red-600 text-[10px]">{section.title}</div>
+                                  <div className="text-red-600 text-[11px]">{section.title}</div>
                                   {item.notes && (
-                                    <div className="mt-1 text-red-700 italic">
+                                    <div className="mt-1.5 text-red-700 italic">
                                       &quot;{item.notes}&quot;
                                     </div>
                                   )}
                                 </div>
                               ))
                           ) : (
-                            <div className="p-2 bg-red-50 rounded text-xs border border-red-100">
+                            <div className="p-2.5 bg-red-50 rounded-lg text-xs border border-red-100">
                               <div className="font-medium text-red-800">Issues detected in inspection</div>
                             </div>
                           )}
@@ -393,14 +385,14 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
 
                     {/* Notes */}
                     {inspection.notes && (
-                      <div className="mt-3 p-2 bg-background rounded text-xs">
+                      <div className="mb-3 p-2.5 bg-background rounded-lg text-xs border border-border">
                         <div className="text-muted-foreground mb-1">Notes</div>
-                        <div>{inspection.notes}</div>
+                        <div className="text-foreground">{inspection.notes}</div>
                       </div>
                     )}
 
                     {/* Delete button */}
-                    <div className="mt-3 pt-3 border-t flex justify-end">
+                    <div className="pt-3 border-t border-border flex justify-end">
                       <Button
                         variant="destructive"
                         size="sm"
@@ -409,9 +401,9 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
                         className="text-xs"
                       >
                         {deletingId === inspection.id ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                         ) : (
-                          <Trash2 className="w-3 h-3 mr-1" />
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                         )}
                         Delete Inspection
                       </Button>

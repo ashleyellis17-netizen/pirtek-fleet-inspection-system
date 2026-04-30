@@ -164,18 +164,16 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
       <div className="flex items-center justify-center gap-1 mb-6 overflow-x-auto px-2">
         {steps.map((s, i) => (
           <div key={s.id} className="flex items-center">
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-              i < currentIndex 
-                ? 'bg-green-100 text-green-700' 
-                : i === currentIndex 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground'
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              i === currentIndex 
+                ? 'bg-foreground text-background' 
+                : 'text-muted-foreground'
             }`}>
-              <s.icon className="w-3 h-3" />
-              <span className="hidden sm:inline">{s.label}</span>
+              <s.icon className="w-3.5 h-3.5" />
+              <span>{s.label}</span>
             </div>
             {i < steps.length - 1 && (
-              <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground mx-0.5" />
             )}
           </div>
         ))}
@@ -189,9 +187,9 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
       
       {/* Step 1: Driver Selection */}
       {step === 'driver' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <User className="w-5 h-5" />
               Select Driver
             </CardTitle>
@@ -245,13 +243,13 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
             )}
             
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={onCancel} className="flex-1">
+              <Button variant="outline" onClick={onCancel} className="flex-1 h-11">
                 Cancel
               </Button>
               <Button 
                 onClick={() => setStep('vehicle')} 
                 disabled={!canProceedFromDriver}
-                className="flex-1"
+                className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -263,9 +261,9 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
 
       {/* Step 2: Vehicle Selection */}
       {step === 'vehicle' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Truck className="w-5 h-5" />
               Select Vehicle
             </CardTitle>
@@ -361,14 +359,14 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
             )}
             
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={() => setStep('driver')} className="flex-1">
+              <Button variant="outline" onClick={() => setStep('driver')} className="flex-1 h-11">
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
               </Button>
               <Button 
                 onClick={() => setStep('mileage')} 
                 disabled={!canProceedFromVehicle}
-                className="flex-1"
+                className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -380,9 +378,9 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
 
       {/* Step 3: Mileage */}
       {step === 'mileage' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Gauge className="w-5 h-5" />
               Current Mileage
             </CardTitle>
@@ -401,14 +399,14 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
             />
             
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={() => setStep('vehicle')} className="flex-1">
+              <Button variant="outline" onClick={() => setStep('vehicle')} className="flex-1 h-11">
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
               </Button>
               <Button 
                 onClick={() => setStep('inspection')} 
                 disabled={!canProceedFromMileage}
-                className="flex-1"
+                className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50"
               >
                 Start Inspection
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -420,7 +418,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
 
       {/* Step 4: Inspection */}
       {step === 'inspection' && currentSection && (
-        <Card>
+        <Card className="border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
@@ -466,24 +464,24 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
             
             <div className="flex gap-3">
               {isFirstSection ? (
-                <Button variant="outline" onClick={() => setStep('mileage')} className="flex-1">
+                <Button variant="outline" onClick={() => setStep('mileage')} className="flex-1 h-11">
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Back
                 </Button>
               ) : (
-                <Button variant="outline" onClick={() => setCurrentSectionIndex(prev => prev - 1)} className="flex-1">
+                <Button variant="outline" onClick={() => setCurrentSectionIndex(prev => prev - 1)} className="flex-1 h-11">
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Previous
                 </Button>
               )}
               
               {isLastSection ? (
-                <Button onClick={() => setStep('review')} className="flex-1">
+                <Button onClick={() => setStep('review')} className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90">
                   Review & Submit
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <Button onClick={() => setCurrentSectionIndex(prev => prev + 1)} className="flex-1">
+                <Button onClick={() => setCurrentSectionIndex(prev => prev + 1)} className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90">
                   Next Section
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -495,9 +493,9 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
 
       {/* Step 5: Review & Submit */}
       {step === 'review' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Inspection</CardTitle>
+        <Card className="border-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Review Inspection</CardTitle>
             <CardDescription>Confirm all details before submitting</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -589,7 +587,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
                   setCurrentSectionIndex(sections.length - 1)
                   setStep('inspection')
                 }} 
-                className="flex-1"
+                className="flex-1 h-11"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Back
@@ -597,9 +595,14 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
               <Button 
                 onClick={handleSubmit} 
                 disabled={isSubmitting}
-                className="flex-1"
+                className="flex-1 h-11 bg-foreground text-background hover:bg-foreground/90"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Inspection'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : 'Submit Inspection'}
               </Button>
             </div>
           </CardContent>

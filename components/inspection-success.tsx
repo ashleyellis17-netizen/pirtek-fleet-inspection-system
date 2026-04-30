@@ -17,11 +17,11 @@ export function InspectionSuccess({ inspection, onContinue }: InspectionSuccessP
 
   return (
     <div className="max-w-md mx-auto p-4 flex flex-col items-center justify-center min-h-[60vh]">
-      <Card className="w-full">
+      <Card className="w-full border-border">
         <CardContent className="p-6 text-center space-y-4">
           {/* Status icon */}
           <div className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center ${
-            isPassing ? 'bg-green-100' : 'bg-red-100'
+            isPassing ? 'bg-green-50' : 'bg-red-50'
           }`}>
             {isPassing ? (
               <CheckCircle2 className="w-12 h-12 text-green-600" />
@@ -32,11 +32,11 @@ export function InspectionSuccess({ inspection, onContinue }: InspectionSuccessP
 
           {/* Title */}
           <div>
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl font-bold text-foreground">
               {isPassing ? 'Inspection Complete' : 'Inspection Submitted'}
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              {inspection.vehicleName} • {inspection.date}
+              {inspection.vehicleName} <span className="mx-1">•</span> {inspection.date}
             </p>
           </div>
 
@@ -65,7 +65,7 @@ export function InspectionSuccess({ inspection, onContinue }: InspectionSuccessP
           {!isPassing && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-red-700">Failed Items:</p>
-              <div className="flex flex-wrap gap-1 justify-center">
+              <div className="flex flex-wrap gap-1.5 justify-center">
                 {inspection.sections ? inspection.sections.flatMap(s => 
                   s.items.filter(i => i.status === 'fail').map(i => (
                     <Badge key={i.id} variant="destructive" className="text-xs">
@@ -83,18 +83,22 @@ export function InspectionSuccess({ inspection, onContinue }: InspectionSuccessP
 
           {/* Summary */}
           <div className="grid grid-cols-2 gap-2 text-xs pt-2">
-            <div className="p-2 bg-muted rounded">
-              <div className="text-muted-foreground">Driver</div>
-              <div className="font-medium">{inspection.driverName}</div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-muted-foreground mb-0.5">Driver</div>
+              <div className="font-medium text-foreground">{inspection.driverName}</div>
             </div>
-            <div className="p-2 bg-muted rounded">
-              <div className="text-muted-foreground">Mileage</div>
-              <div className="font-medium font-mono">{(inspection.mileage ?? 0).toLocaleString()}</div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-muted-foreground mb-0.5">Mileage</div>
+              <div className="font-medium font-mono text-foreground">{(inspection.mileage ?? 0).toLocaleString()}</div>
             </div>
           </div>
 
           {/* Continue button */}
-          <Button onClick={onContinue} className="w-full mt-4" size="lg">
+          <Button 
+            onClick={onContinue} 
+            className="w-full mt-4 h-12 bg-foreground text-background hover:bg-foreground/90" 
+            size="lg"
+          >
             Continue to Dashboard
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
