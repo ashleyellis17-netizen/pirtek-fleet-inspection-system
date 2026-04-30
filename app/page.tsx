@@ -54,7 +54,7 @@ export default function FleetInspectionApp() {
           />
         )}
       </div>
-      <Toaster position="top-center" />
+      <Toaster position="bottom-center" />
     </main>
   )
 }
