@@ -77,10 +77,14 @@ export async function GET() {
     }
 
     // Ensure each inspection has an ID (use row number or generate one if missing)
-    inspections = inspections.map((insp, index) => ({
-      ...insp,
-      id: insp.id || insp.rowNumber || insp.row || `inspection-${index}-${insp.date || Date.now()}`,
-    }))
+    // Cast to any to handle dynamic fields from Google Sheets that aren't in our type
+    inspections = inspections.map((insp, index) => {
+      const rawInsp = insp as Inspection & { rowNumber?: string | number; row?: string | number }
+      return {
+        ...insp,
+        id: insp.id || rawInsp.rowNumber?.toString() || rawInsp.row?.toString() || `inspection-${index}-${insp.date || Date.now()}`,
+      }
+    })
 
     // Sort by submittedAt descending (newest first)
     inspections.sort((a, b) => {
