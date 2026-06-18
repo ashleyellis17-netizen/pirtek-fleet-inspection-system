@@ -44,39 +44,60 @@ function toLocalDateKey(value: string | undefined): string {
   return `${year}-${month}-${day}`
 }
 
+// Normalize a status value coming from Google Sheets (could have stray
+// casing/whitespace) into a lowercase comparison key.
+function normalizeStatus(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+// Best-effort timestamp for ordering inspections. Falls back to date when
+// submittedAt is missing or unparseable.
+function getInspectionTime(insp: Inspection): number {
+  const fromSubmitted = new Date(insp.submittedAt).getTime()
+  if (!isNaN(fromSubmitted)) return fromSubmitted
+  const fromDate = new Date(insp.date).getTime()
+  return isNaN(fromDate) ? 0 : fromDate
+}
+
 // Calculate dashboard stats from inspections
 function calculateDashboardStats(inspections: Inspection[]): DashboardStats {
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
   const todayInspections = inspections.filter(i => {
     const inspectionDay = toLocalDateKey(i.date) || toLocalDateKey(i.submittedAt)
     return inspectionDay === today
   })
-  const recentInspections = inspections.filter(i => new Date(i.submittedAt) >= thirtyDaysAgo)
 
   // Get unique vehicles with their most recent inspection
   const vehicleLatestInspection = new Map<string, Inspection>()
   inspections.forEach(insp => {
-    const existing = vehicleLatestInspection.get(insp.vehicleId)
-    if (!existing || new Date(insp.submittedAt) > new Date(existing.submittedAt)) {
-      vehicleLatestInspection.set(insp.vehicleId, insp)
+    const key = insp.vehicleId || insp.vehicleName || insp.id
+    const existing = vehicleLatestInspection.get(key)
+    if (!existing || getInspectionTime(insp) > getInspectionTime(existing)) {
+      vehicleLatestInspection.set(key, insp)
     }
   })
 
-  // Count vehicles with active warning lights
+  // Count vehicles whose most recent inspection has warning lights on
   let activeIssuesLightsOn = 0
   vehicleLatestInspection.forEach((insp) => {
-    if (insp.lightsStatus === 'fail') {
+    if (normalizeStatus(insp.lightsStatus) === 'fail') {
       activeIssuesLightsOn++
     }
   })
 
-  const passedRecent = recentInspections.filter(i => i.overallStatus === 'pass').length
-  const passRate = recentInspections.length > 0 
-    ? Math.round((passedRecent / recentInspections.length) * 100) 
+  // Pass rate across all inspections. An inspection counts as a pass when its
+  // overall status is "pass" (falling back to a perfect score when status is
+  // missing from older records).
+  const passed = inspections.filter(i => {
+    const status = normalizeStatus(i.overallStatus)
+    if (status === 'pass') return true
+    if (status === 'fail') return false
+    return Number(i.score) >= 100
+  }).length
+  const passRate = inspections.length > 0
+    ? Math.round((passed / inspections.length) * 100)
     : 0
 
   return {
@@ -287,10 +308,10 @@ export function Dashboard({ onStartInspection, onViewHistory }: DashboardProps) 
                     <div key={inspection.id} className="px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          inspection.overallStatus === 'pass' ? 'bg-red-50' : 'bg-red-50'
+                          normalizeStatus(inspection.overallStatus) === 'pass' ? 'bg-green-50' : 'bg-red-50'
                         }`}>
                           <div className={`w-2 h-2 rounded-full ${
-                            inspection.overallStatus === 'pass' ? 'bg-red-400' : 'bg-red-500'
+                            normalizeStatus(inspection.overallStatus) === 'pass' ? 'bg-green-500' : 'bg-red-500'
                           }`} />
                         </div>
                         <div>
@@ -301,7 +322,7 @@ export function Dashboard({ onStartInspection, onViewHistory }: DashboardProps) 
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm font-semibold text-foreground">{inspection.score ?? 100}%</div>
+                        <div className="font-mono text-sm font-semibold text-foreground">{Math.round(Number(inspection.score ?? 0))}%</div>
                       </div>
                     </div>
                   ))}

@@ -281,9 +281,11 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
                   className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      inspection.overallStatus === 'pass' ? 'bg-green-50' : 'bg-red-50'
+                    }`}>
                       <div className={`w-2 h-2 rounded-full ${
-                        inspection.overallStatus === 'pass' ? 'bg-red-400' : 'bg-red-500'
+                        inspection.overallStatus === 'pass' ? 'bg-green-500' : 'bg-red-500'
                       }`} />
                     </div>
                     <div>

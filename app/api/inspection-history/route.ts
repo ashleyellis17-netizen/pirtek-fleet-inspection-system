@@ -76,14 +76,41 @@ export async function GET() {
       console.log('[v0] First inspection data:', JSON.stringify(inspections[0]).substring(0, 500))
     }
 
-    // Ensure each inspection has an ID (use row number or generate one if missing)
-    // Cast to any to handle dynamic fields from Google Sheets that aren't in our type
+    // The Google Sheet stores flattened columns (lossy: dates become numeric
+    // serials, status is capitalized, and score/sections are dropped) but also
+    // keeps the original submission JSON in a `rawPayload` column. Parse and
+    // merge that authoritative payload back over the flattened row so the data
+    // matches our Inspection type (proper date strings, lowercase status,
+    // score, sections, etc.). Fall back to the flattened fields when needed.
     inspections = inspections.map((insp, index) => {
-      const rawInsp = insp as Inspection & { rowNumber?: string | number; row?: string | number }
-      return {
-        ...insp,
-        id: insp.id || rawInsp.rowNumber?.toString() || rawInsp.row?.toString() || `inspection-${index}-${insp.date || Date.now()}`,
+      const rawInsp = insp as Inspection & {
+        rowNumber?: string | number
+        row?: string | number
+        inspectionId?: string
+        rawPayload?: string
       }
+
+      let parsed: Partial<Inspection> & { id?: string } = {}
+      if (rawInsp.rawPayload && typeof rawInsp.rawPayload === 'string') {
+        try {
+          parsed = JSON.parse(rawInsp.rawPayload)
+        } catch (e) {
+          console.error('[v0] Failed to parse rawPayload for row', index, e)
+        }
+      }
+
+      const merged = { ...insp, ...parsed } as Inspection
+
+      // Prefer the sheet's own inspectionId as the stable record id (used for
+      // deletes), then the payload id, then a generated fallback.
+      merged.id =
+        rawInsp.inspectionId ||
+        parsed.id ||
+        rawInsp.rowNumber?.toString() ||
+        rawInsp.row?.toString() ||
+        `inspection-${index}-${merged.date || Date.now()}`
+
+      return merged
     })
 
     // Sort by submittedAt descending (newest first)
