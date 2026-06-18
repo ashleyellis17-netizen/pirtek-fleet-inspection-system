@@ -28,13 +28,33 @@ interface DashboardStats {
   activeIssuesLightsOn: number
 }
 
+// Normalize a date value to a local YYYY-MM-DD string.
+// Google Sheets returns date cells as full ISO timestamps (e.g. "2026-06-18T05:00:00.000Z"),
+// while freshly submitted inspections use a plain "2026-06-18" string. Normalize both so
+// the comparison works regardless of source format.
+function toLocalDateKey(value: string | undefined): string {
+  if (!value) return ''
+  // Already a plain date string
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const parsed = new Date(value)
+  if (isNaN(parsed.getTime())) return ''
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Calculate dashboard stats from inspections
 function calculateDashboardStats(inspections: Inspection[]): DashboardStats {
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const todayInspections = inspections.filter(i => i.date === today)
+  const todayInspections = inspections.filter(i => {
+    const inspectionDay = toLocalDateKey(i.date) || toLocalDateKey(i.submittedAt)
+    return inspectionDay === today
+  })
   const recentInspections = inspections.filter(i => new Date(i.submittedAt) >= thirtyDaysAgo)
 
   // Get unique vehicles with their most recent inspection

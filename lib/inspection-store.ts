@@ -78,12 +78,30 @@ export function getRecentInspections(): Inspection[] {
   return inspections.filter(i => new Date(i.submittedAt) >= thirtyDaysAgo)
 }
 
+// Normalize a date value to a local YYYY-MM-DD string.
+// Google Sheets returns date cells as full ISO timestamps, while freshly
+// submitted inspections use a plain "YYYY-MM-DD" string. Normalize both.
+function toLocalDateKey(value: string | undefined): string {
+  if (!value) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const parsed = new Date(value)
+  if (isNaN(parsed.getTime())) return ''
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Get today's inspections
 export function getTodayInspections(): Inspection[] {
   const inspections = getInspections()
-  const today = new Date().toISOString().split('T')[0]
-  
-  return inspections.filter(i => i.date === today)
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+  return inspections.filter(i => {
+    const inspectionDay = toLocalDateKey(i.date) || toLocalDateKey(i.submittedAt)
+    return inspectionDay === today
+  })
 }
 
 // Dashboard statistics
