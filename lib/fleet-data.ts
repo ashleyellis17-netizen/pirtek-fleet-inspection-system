@@ -68,6 +68,7 @@ export const DRIVERS: Driver[] = [
   // No Warehouse
   { id: 'luis-luz', name: 'Luis Luz', warehouseCode: '' },
   { id: 'carl-britton', name: 'Carl Britton', warehouseCode: '' },
+  { id: 'brandon-barker', name: 'Brandon Barker', warehouseCode: '' },
 ]
 
 // Vehicle assignments - each driver has their specific vehicle with license plate
