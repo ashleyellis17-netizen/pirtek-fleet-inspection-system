@@ -308,10 +308,10 @@ export function Dashboard({ onStartInspection, onViewHistory }: DashboardProps) 
                     <div key={inspection.id} className="px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          inspection.overallStatus === 'pass' ? 'bg-red-50' : 'bg-red-50'
+                          normalizeStatus(inspection.overallStatus) === 'pass' ? 'bg-green-50' : 'bg-red-50'
                         }`}>
                           <div className={`w-2 h-2 rounded-full ${
-                            inspection.overallStatus === 'pass' ? 'bg-red-400' : 'bg-red-500'
+                            normalizeStatus(inspection.overallStatus) === 'pass' ? 'bg-green-500' : 'bg-red-500'
                           }`} />
                         </div>
                         <div>
@@ -322,7 +322,7 @@ export function Dashboard({ onStartInspection, onViewHistory }: DashboardProps) 
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm font-semibold text-foreground">{inspection.score ?? 100}%</div>
+                        <div className="font-mono text-sm font-semibold text-foreground">{Math.round(Number(inspection.score ?? 0))}%</div>
                       </div>
                     </div>
                   ))}
