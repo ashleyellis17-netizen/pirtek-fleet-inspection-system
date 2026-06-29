@@ -16,10 +16,10 @@ interface InspectionPayload {
 }
 
 export async function POST(request: Request) {
-  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL
+  const SCRIPT_URL = process.env.NEXT_PUBLIC_INSPECTION_SCRIPT_URL
 
-  if (!GOOGLE_SCRIPT_URL) {
-    console.error('[v0] GOOGLE_SCRIPT_URL environment variable is not set')
+  if (!SCRIPT_URL) {
+    console.error('[v0] NEXT_PUBLIC_INSPECTION_SCRIPT_URL environment variable is not set')
     return NextResponse.json(
       { success: false, error: 'Server configuration error: Google Script URL not configured' },
       { status: 500 }
@@ -44,9 +44,9 @@ export async function POST(request: Request) {
 
     // Forward to Google Sheets
     console.log('[v0] Submitting inspection to Google Sheets:', inspection.id)
-    console.log('[v0] Using GOOGLE_SCRIPT_URL:', GOOGLE_SCRIPT_URL.substring(0, 50) + '...')
+    console.log('[v0] Using SCRIPT_URL:', SCRIPT_URL.substring(0, 50) + '...')
     
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
+    const response = await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',
