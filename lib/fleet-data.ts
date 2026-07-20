@@ -105,6 +105,7 @@ export const VEHICLES: Vehicle[] = [
   // No Warehouse
   { id: '1613130', plate: '1613130', warehouseCode: '', type: 'standard', driverId: 'luis-luz' },
   { id: '1613125B', plate: '1613125B', warehouseCode: '', type: 'standard', driverId: 'carl-britton' },
+  { id: 'THC-5704', plate: 'THC-5704', warehouseCode: '', type: 'shop', driverId: 'brandon-barker' },
 ]
 
 // Helper functions
