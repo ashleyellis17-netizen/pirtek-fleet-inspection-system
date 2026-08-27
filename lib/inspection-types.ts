@@ -19,36 +19,60 @@ export interface InspectionSection {
 }
 
 // Tire tread depth measurements (in 32nds of an inch)
+// Fleet is Ford Transit 350 Dually - dual rear wheels, LT commercial tires.
+// New LT tires typically start around 14-18/32", so depths are entered blank
+// and the driver measures with a tread gauge.
+export type TireAxle = 'steer' | 'drive' | 'spare'
+
 export interface TireTreadDepth {
   id: string
   label: string
   short: string
+  axle: TireAxle
   depth: string // kept as string for controlled inputs; empty = not measured
 }
 
-// Legal minimum tread depth (32nds of an inch)
-export const TREAD_MIN_LEGAL = 2
-// Recommended replacement threshold (32nds of an inch)
-export const TREAD_MIN_WARN = 4
+// FMCSA minimums for commercial vehicles (32nds of an inch)
+export const TREAD_MIN_STEER = 4 // front/steer axle legal minimum
+export const TREAD_MIN_DRIVE = 2 // all other axles legal minimum
+// Monitor thresholds - replace soon before hitting legal minimum
+export const TREAD_WARN_STEER = 6
+export const TREAD_WARN_DRIVE = 4
+// Typical new LT tire tread depth, used for the input hint and range guard
+export const TREAD_NEW_TYPICAL = 16
+export const TREAD_MAX_INPUT = 25
 
 export function createTireTreadDepths(): TireTreadDepth[] {
   return [
-    { id: 'lf', label: 'Left Front', short: 'LF', depth: '' },
-    { id: 'rf', label: 'Right Front', short: 'RF', depth: '' },
-    { id: 'lr', label: 'Left Rear', short: 'LR', depth: '' },
-    { id: 'rr', label: 'Right Rear', short: 'RR', depth: '' },
-    { id: 'spare', label: 'Spare', short: 'SP', depth: '' },
+    { id: 'lf', label: 'Left Front', short: 'LF', axle: 'steer', depth: '' },
+    { id: 'rf', label: 'Right Front', short: 'RF', axle: 'steer', depth: '' },
+    { id: 'lro', label: 'Left Rear Outer', short: 'LRO', axle: 'drive', depth: '' },
+    { id: 'lri', label: 'Left Rear Inner', short: 'LRI', axle: 'drive', depth: '' },
+    { id: 'rri', label: 'Right Rear Inner', short: 'RRI', axle: 'drive', depth: '' },
+    { id: 'rro', label: 'Right Rear Outer', short: 'RRO', axle: 'drive', depth: '' },
+    { id: 'spare', label: 'Spare', short: 'SP', axle: 'spare', depth: '' },
   ]
+}
+
+export function getTreadLimits(axle: TireAxle | undefined) {
+  if (axle === 'steer') {
+    return { legal: TREAD_MIN_STEER, warn: TREAD_WARN_STEER }
+  }
+  return { legal: TREAD_MIN_DRIVE, warn: TREAD_WARN_DRIVE }
 }
 
 export type TreadSeverity = 'ok' | 'warn' | 'critical' | 'empty'
 
-export function getTreadSeverity(depth: string | number | undefined): TreadSeverity {
+export function getTreadSeverity(
+  depth: string | number | undefined,
+  axle: TireAxle | undefined = 'drive',
+): TreadSeverity {
   if (depth === '' || depth === undefined || depth === null) return 'empty'
   const value = typeof depth === 'number' ? depth : Number.parseFloat(depth)
   if (Number.isNaN(value)) return 'empty'
-  if (value <= TREAD_MIN_LEGAL) return 'critical'
-  if (value < TREAD_MIN_WARN) return 'warn'
+  const { legal, warn } = getTreadLimits(axle)
+  if (value <= legal) return 'critical'
+  if (value < warn) return 'warn'
   return 'ok'
 }
 

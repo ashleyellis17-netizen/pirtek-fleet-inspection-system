@@ -345,9 +345,9 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
                     {inspection.tireTreadDepths && inspection.tireTreadDepths.some(t => t.depth !== '' && t.depth !== null) && (
                       <div className="mb-3">
                         <div className="text-xs font-medium text-muted-foreground mb-1.5">Tire Tread Depth (32nds)</div>
-                        <div className="grid grid-cols-5 gap-1.5">
+                        <div className="grid grid-cols-4 gap-1.5">
                           {inspection.tireTreadDepths.map(tire => {
-                            const severity = getTreadSeverity(tire.depth)
+                            const severity = getTreadSeverity(tire.depth, tire.axle)
                             return (
                               <div
                                 key={tire.id}
