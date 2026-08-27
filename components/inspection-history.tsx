@@ -341,6 +341,23 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
                       </div>
                     </div>
 
+                    {/* Tire tread depths */}
+                    {inspection.tireTreadDepths && inspection.tireTreadDepths.some(t => t.depth !== '' && t.depth !== null) && (
+                      <div className="mb-3">
+                        <div className="text-xs font-medium text-muted-foreground mb-1.5">Tire Tread Depth</div>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {inspection.tireTreadDepths.map(tire => (
+                            <div key={tire.id} className="p-2 rounded-lg text-center border bg-background border-border">
+                              <div className="text-[10px] text-muted-foreground">{tire.short}</div>
+                              <div className="font-mono text-xs font-semibold text-foreground">
+                                {tire.depth === '' || tire.depth === null ? '—' : tire.depth}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Lights warning */}
                     {inspection.lightsStatus === 'fail' && (
                       <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200">

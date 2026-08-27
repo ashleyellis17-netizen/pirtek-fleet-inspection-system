@@ -18,6 +18,31 @@ export interface InspectionSection {
   items: InspectionItem[]
 }
 
+// Tire tread depth measurements
+// Fleet is Ford Transit 350 Dually - dual rear wheels.
+// All fields start blank so the driver fills in their own readings.
+export type TireAxle = 'steer' | 'drive' | 'spare'
+
+export interface TireTreadDepth {
+  id: string
+  label: string
+  short: string
+  axle: TireAxle
+  depth: string // kept as string for controlled inputs; empty = not measured
+}
+
+export function createTireTreadDepths(): TireTreadDepth[] {
+  return [
+    { id: 'lf', label: 'Left Front', short: 'LF', axle: 'steer', depth: '' },
+    { id: 'rf', label: 'Right Front', short: 'RF', axle: 'steer', depth: '' },
+    { id: 'lro', label: 'Left Rear Outer', short: 'LRO', axle: 'drive', depth: '' },
+    { id: 'lri', label: 'Left Rear Inner', short: 'LRI', axle: 'drive', depth: '' },
+    { id: 'rri', label: 'Right Rear Inner', short: 'RRI', axle: 'drive', depth: '' },
+    { id: 'rro', label: 'Right Rear Outer', short: 'RRO', axle: 'drive', depth: '' },
+    { id: 'spare', label: 'Spare', short: 'SP', axle: 'spare', depth: '' },
+  ]
+}
+
 export interface Inspection {
   id: string
   driverId: string
@@ -30,6 +55,7 @@ export interface Inspection {
   time: string
   mileage: number
   sections: InspectionSection[]
+  tireTreadDepths?: TireTreadDepth[]
   overallStatus: 'pass' | 'fail'
   score: number
   totalItems: number

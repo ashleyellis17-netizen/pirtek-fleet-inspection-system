@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { DRIVERS, WAREHOUSES, getVehiclesForDriver, getDriverById, getWarehouseByCode, type Driver, type Vehicle } from '@/lib/fleet-data'
-import { createInspectionSections, type InspectionSection, type InspectionStatus, type InspectionItem, type Inspection } from '@/lib/inspection-types'
+import { createInspectionSections, createTireTreadDepths, type InspectionSection, type InspectionStatus, type InspectionItem, type Inspection, type TireTreadDepth, type TireAxle } from '@/lib/inspection-types'
 import { toast } from 'sonner'
-import { CheckCircle2, XCircle, MinusCircle, ChevronRight, ChevronLeft, AlertTriangle, Truck, User, Building2, Gauge, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, MinusCircle, ChevronRight, ChevronLeft, AlertTriangle, Truck, User, Building2, Gauge, Loader2, Ruler } from 'lucide-react'
 
 interface InspectionFormProps {
   onComplete: (inspection: Inspection) => void
@@ -28,6 +28,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
   const [mileage, setMileage] = useState('')
   const [sections, setSections] = useState<InspectionSection[]>(createInspectionSections())
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [tireTreadDepths, setTireTreadDepths] = useState<TireTreadDepth[]>(createTireTreadDepths())
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -79,6 +80,16 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
     }))
   }
 
+  const updateTreadDepth = (tireId: string, depth: string) => {
+    // Allow only numbers with one optional decimal place
+    if (depth !== '' && !/^\d{0,2}(\.\d?)?$/.test(depth)) return
+    setTireTreadDepths(prev => prev.map(tire => (
+      tire.id === tireId ? { ...tire, depth } : tire
+    )))
+  }
+
+  const measuredTires = tireTreadDepths.filter(t => t.depth !== '')
+
   const handleSubmit = async () => {
     if (!selectedDriver || !selectedVehicle) return
     
@@ -98,6 +109,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
       time: now.toTimeString().split(' ')[0].slice(0, 5),
       mileage: parseInt(mileage) || 0,
       sections,
+      tireTreadDepths,
       notes: notes || undefined,
     }
     
@@ -460,6 +472,13 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
               />
             ))}
             
+            {currentSection.id === 'tires-wheels' && (
+              <TireTreadDepths
+                tires={tireTreadDepths}
+                onDepthChange={updateTreadDepth}
+              />
+            )}
+            
             <Separator className="my-4" />
             
             <div className="flex gap-3">
@@ -552,6 +571,23 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
               })}
             </div>
             
+            {/* Tire tread depth summary */}
+            {measuredTires.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Tire Tread Depth</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {tireTreadDepths.map(tire => (
+                    <div key={tire.id} className="p-2 rounded-lg text-center bg-muted">
+                      <div className="text-[11px] text-muted-foreground">{tire.short}</div>
+                      <div className="font-mono text-sm font-semibold text-foreground">
+                        {tire.depth === '' ? '—' : tire.depth}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* Warning lights alert */}
             {sections.find(s => s.id === 'electrical-visibility')?.items.find(i => i.id === 'lights-warning')?.status === 'fail' && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -608,6 +644,65 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
           </CardContent>
         </Card>
       )}
+    </div>
+  )
+}
+
+// Tire tread depth entry - blank fields for the driver to fill in
+interface TireTreadDepthsProps {
+  tires: TireTreadDepth[]
+  onDepthChange: (tireId: string, depth: string) => void
+}
+
+const TREAD_GROUPS: { axle: TireAxle; title: string }[] = [
+  { axle: 'steer', title: 'Front Axle' },
+  { axle: 'drive', title: 'Rear Axle (Dual Wheels)' },
+  { axle: 'spare', title: 'Spare' },
+]
+
+function TireTreadDepths({ tires, onDepthChange }: TireTreadDepthsProps) {
+  return (
+    <div className="border rounded-lg p-3 space-y-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <Ruler className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-sm">Tread Depth Measurements</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Enter the tread depth for each tire. Leave blank if not measured.
+        </p>
+      </div>
+
+      {TREAD_GROUPS.map(group => {
+        const groupTires = tires.filter(t => t.axle === group.axle)
+        if (groupTires.length === 0) return null
+        return (
+          <div key={group.axle} className="space-y-2">
+            <h5 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {group.title}
+            </h5>
+            {groupTires.map(tire => (
+              <div key={tire.id} className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="inline-flex items-center justify-center w-11 h-6 rounded bg-muted text-[11px] font-mono font-semibold text-muted-foreground">
+                    {tire.short}
+                  </span>
+                  <span className="text-sm truncate">{tire.label}</span>
+                </div>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="--"
+                  value={tire.depth}
+                  onChange={(e) => onDepthChange(tire.id, e.target.value)}
+                  aria-label={`${tire.label} tread depth`}
+                  className="h-11 w-24 text-center text-base font-mono"
+                />
+              </div>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }
