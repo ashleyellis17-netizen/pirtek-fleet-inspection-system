@@ -18,10 +18,9 @@ export interface InspectionSection {
   items: InspectionItem[]
 }
 
-// Tire tread depth measurements (in 32nds of an inch)
-// Fleet is Ford Transit 350 Dually - dual rear wheels, LT commercial tires.
-// New LT tires typically start around 14-18/32", so depths are entered blank
-// and the driver measures with a tread gauge.
+// Tire tread depth measurements
+// Fleet is Ford Transit 350 Dually - dual rear wheels.
+// All fields start blank so the driver fills in their own readings.
 export type TireAxle = 'steer' | 'drive' | 'spare'
 
 export interface TireTreadDepth {
@@ -31,16 +30,6 @@ export interface TireTreadDepth {
   axle: TireAxle
   depth: string // kept as string for controlled inputs; empty = not measured
 }
-
-// FMCSA minimums for commercial vehicles (32nds of an inch)
-export const TREAD_MIN_STEER = 4 // front/steer axle legal minimum
-export const TREAD_MIN_DRIVE = 2 // all other axles legal minimum
-// Monitor thresholds - replace soon before hitting legal minimum
-export const TREAD_WARN_STEER = 6
-export const TREAD_WARN_DRIVE = 4
-// Typical new LT tire tread depth, used for the input hint and range guard
-export const TREAD_NEW_TYPICAL = 16
-export const TREAD_MAX_INPUT = 25
 
 export function createTireTreadDepths(): TireTreadDepth[] {
   return [
@@ -52,28 +41,6 @@ export function createTireTreadDepths(): TireTreadDepth[] {
     { id: 'rro', label: 'Right Rear Outer', short: 'RRO', axle: 'drive', depth: '' },
     { id: 'spare', label: 'Spare', short: 'SP', axle: 'spare', depth: '' },
   ]
-}
-
-export function getTreadLimits(axle: TireAxle | undefined) {
-  if (axle === 'steer') {
-    return { legal: TREAD_MIN_STEER, warn: TREAD_WARN_STEER }
-  }
-  return { legal: TREAD_MIN_DRIVE, warn: TREAD_WARN_DRIVE }
-}
-
-export type TreadSeverity = 'ok' | 'warn' | 'critical' | 'empty'
-
-export function getTreadSeverity(
-  depth: string | number | undefined,
-  axle: TireAxle | undefined = 'drive',
-): TreadSeverity {
-  if (depth === '' || depth === undefined || depth === null) return 'empty'
-  const value = typeof depth === 'number' ? depth : Number.parseFloat(depth)
-  if (Number.isNaN(value)) return 'empty'
-  const { legal, warn } = getTreadLimits(axle)
-  if (value <= legal) return 'critical'
-  if (value < warn) return 'warn'
-  return 'ok'
 }
 
 export interface Inspection {

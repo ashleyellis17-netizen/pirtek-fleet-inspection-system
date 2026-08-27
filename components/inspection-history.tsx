@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { getTreadSeverity, type Inspection } from '@/lib/inspection-types'
+import { type Inspection } from '@/lib/inspection-types'
 import { WAREHOUSES, DRIVERS } from '@/lib/fleet-data'
 import { toast } from 'sonner'
 import { 
@@ -344,30 +344,16 @@ export function InspectionHistory({ onBack }: InspectionHistoryProps) {
                     {/* Tire tread depths */}
                     {inspection.tireTreadDepths && inspection.tireTreadDepths.some(t => t.depth !== '' && t.depth !== null) && (
                       <div className="mb-3">
-                        <div className="text-xs font-medium text-muted-foreground mb-1.5">Tire Tread Depth (32nds)</div>
+                        <div className="text-xs font-medium text-muted-foreground mb-1.5">Tire Tread Depth</div>
                         <div className="grid grid-cols-4 gap-1.5">
-                          {inspection.tireTreadDepths.map(tire => {
-                            const severity = getTreadSeverity(tire.depth, tire.axle)
-                            return (
-                              <div
-                                key={tire.id}
-                                className={`p-2 rounded-lg text-center border ${
-                                  severity === 'critical'
-                                    ? 'bg-red-50 border-red-200'
-                                    : severity === 'warn'
-                                      ? 'bg-amber-50 border-amber-200'
-                                      : 'bg-background border-border'
-                                }`}
-                              >
-                                <div className="text-[10px] text-muted-foreground">{tire.short}</div>
-                                <div className={`font-mono text-xs font-semibold ${
-                                  severity === 'critical' ? 'text-red-700' : severity === 'warn' ? 'text-amber-700' : 'text-foreground'
-                                }`}>
-                                  {tire.depth === '' || tire.depth === null ? '—' : tire.depth}
-                                </div>
+                          {inspection.tireTreadDepths.map(tire => (
+                            <div key={tire.id} className="p-2 rounded-lg text-center border bg-background border-border">
+                              <div className="text-[10px] text-muted-foreground">{tire.short}</div>
+                              <div className="font-mono text-xs font-semibold text-foreground">
+                                {tire.depth === '' || tire.depth === null ? '—' : tire.depth}
                               </div>
-                            )
-                          })}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
