@@ -18,6 +18,40 @@ export interface InspectionSection {
   items: InspectionItem[]
 }
 
+// Tire tread depth measurements (in 32nds of an inch)
+export interface TireTreadDepth {
+  id: string
+  label: string
+  short: string
+  depth: string // kept as string for controlled inputs; empty = not measured
+}
+
+// Legal minimum tread depth (32nds of an inch)
+export const TREAD_MIN_LEGAL = 2
+// Recommended replacement threshold (32nds of an inch)
+export const TREAD_MIN_WARN = 4
+
+export function createTireTreadDepths(): TireTreadDepth[] {
+  return [
+    { id: 'lf', label: 'Left Front', short: 'LF', depth: '' },
+    { id: 'rf', label: 'Right Front', short: 'RF', depth: '' },
+    { id: 'lr', label: 'Left Rear', short: 'LR', depth: '' },
+    { id: 'rr', label: 'Right Rear', short: 'RR', depth: '' },
+    { id: 'spare', label: 'Spare', short: 'SP', depth: '' },
+  ]
+}
+
+export type TreadSeverity = 'ok' | 'warn' | 'critical' | 'empty'
+
+export function getTreadSeverity(depth: string | number | undefined): TreadSeverity {
+  if (depth === '' || depth === undefined || depth === null) return 'empty'
+  const value = typeof depth === 'number' ? depth : Number.parseFloat(depth)
+  if (Number.isNaN(value)) return 'empty'
+  if (value <= TREAD_MIN_LEGAL) return 'critical'
+  if (value < TREAD_MIN_WARN) return 'warn'
+  return 'ok'
+}
+
 export interface Inspection {
   id: string
   driverId: string
@@ -30,6 +64,7 @@ export interface Inspection {
   time: string
   mileage: number
   sections: InspectionSection[]
+  tireTreadDepths?: TireTreadDepth[]
   overallStatus: 'pass' | 'fail'
   score: number
   totalItems: number

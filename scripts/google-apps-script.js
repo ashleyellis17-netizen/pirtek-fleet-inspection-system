@@ -22,7 +22,8 @@
  * A: ID, B: Date, C: Time, D: Driver Name, E: Driver ID, F: Vehicle Plate, 
  * G: Vehicle ID, H: Warehouse Code, I: Warehouse Name, J: Mileage, 
  * K: Overall Status, L: Score, M: Total Items, N: Passed Items, O: Failed Items,
- * P: Lights Status, Q: Notes, R: Submitted At, S: Sections JSON
+ * P: Lights Status, Q: Notes, R: Submitted At, S: Sections JSON,
+ * T: Tire Tread Depths JSON
  */
 
 // Configuration - Update this to match your sheet
@@ -49,7 +50,8 @@ const HEADERS = [
   'Lights Status',
   'Notes',
   'Submitted At',
-  'Sections (JSON)'
+  'Sections (JSON)',
+  'Tire Tread Depths (JSON)'
 ];
 
 /**
@@ -159,6 +161,24 @@ function getOrCreateSheet() {
     sheet.setColumnWidth(17, 200); // Notes
     sheet.setColumnWidth(18, 180); // Submitted At
     sheet.setColumnWidth(19, 300); // Sections JSON
+    sheet.setColumnWidth(20, 260); // Tire Tread Depths JSON
+  } else {
+    // Existing sheet: make sure it has enough columns and up-to-date headers
+    if (sheet.getMaxColumns() < HEADERS.length) {
+      sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+    }
+    const headerRange = sheet.getRange(HEADER_ROW, 1, 1, HEADERS.length);
+    const existingHeaders = headerRange.getValues()[0];
+    const needsUpdate = HEADERS.some(function (header, i) {
+      return existingHeaders[i] !== header;
+    });
+    if (needsUpdate) {
+      headerRange.setValues([HEADERS]);
+      headerRange
+        .setFontWeight('bold')
+        .setBackground('#1a73e8')
+        .setFontColor('#ffffff');
+    }
   }
   
   return sheet;
@@ -190,7 +210,8 @@ function addInspection(inspection) {
     inspection.lightsStatus || '',
     inspection.notes || '',
     inspection.submittedAt || new Date().toISOString(),
-    JSON.stringify(inspection.sections || [])
+    JSON.stringify(inspection.sections || []),
+    JSON.stringify(inspection.tireTreadDepths || [])
   ];
   
   // Append to sheet
@@ -245,6 +266,15 @@ function getAllInspections() {
       console.log('Error parsing sections for row ' + (index + HEADER_ROW + 1));
     }
     
+    let tireTreadDepths = [];
+    try {
+      if (row[19]) {
+        tireTreadDepths = JSON.parse(row[19]);
+      }
+    } catch (e) {
+      console.log('Error parsing tire tread depths for row ' + (index + HEADER_ROW + 1));
+    }
+    
     return {
       id: row[0],
       date: row[1],
@@ -265,6 +295,7 @@ function getAllInspections() {
       notes: row[16],
       submittedAt: row[17],
       sections: sections,
+      tireTreadDepths: tireTreadDepths,
       rowNumber: index + HEADER_ROW + 1
     };
   }).filter(insp => insp.id); // Filter out empty rows

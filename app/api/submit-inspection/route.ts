@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { calculateInspectionScore, getLightsStatus, type InspectionSection } from '@/lib/inspection-types'
+import { calculateInspectionScore, getLightsStatus, type InspectionSection, type TireTreadDepth } from '@/lib/inspection-types'
 
 interface InspectionPayload {
   driverId: string
@@ -12,6 +12,7 @@ interface InspectionPayload {
   time: string
   mileage: number
   sections: InspectionSection[]
+  tireTreadDepths?: TireTreadDepth[]
   notes?: string
 }
 

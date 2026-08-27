@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { DRIVERS, WAREHOUSES, getVehiclesForDriver, getDriverById, getWarehouseByCode, type Driver, type Vehicle } from '@/lib/fleet-data'
-import { createInspectionSections, type InspectionSection, type InspectionStatus, type InspectionItem, type Inspection } from '@/lib/inspection-types'
+import { createInspectionSections, createTireTreadDepths, getTreadSeverity, TREAD_MIN_LEGAL, TREAD_MIN_WARN, type InspectionSection, type InspectionStatus, type InspectionItem, type Inspection, type TireTreadDepth } from '@/lib/inspection-types'
 import { toast } from 'sonner'
-import { CheckCircle2, XCircle, MinusCircle, ChevronRight, ChevronLeft, AlertTriangle, Truck, User, Building2, Gauge, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, MinusCircle, ChevronRight, ChevronLeft, AlertTriangle, Truck, User, Building2, Gauge, Loader2, Ruler } from 'lucide-react'
 
 interface InspectionFormProps {
   onComplete: (inspection: Inspection) => void
@@ -28,6 +28,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
   const [mileage, setMileage] = useState('')
   const [sections, setSections] = useState<InspectionSection[]>(createInspectionSections())
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [tireTreadDepths, setTireTreadDepths] = useState<TireTreadDepth[]>(createTireTreadDepths())
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -79,6 +80,20 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
     }))
   }
 
+  const updateTreadDepth = (tireId: string, depth: string) => {
+    // Allow only numbers with one optional decimal place
+    if (depth !== '' && !/^\d{0,2}(\.\d?)?$/.test(depth)) return
+    setTireTreadDepths(prev => prev.map(tire => (
+      tire.id === tireId ? { ...tire, depth } : tire
+    )))
+  }
+
+  const measuredTires = tireTreadDepths.filter(t => t.depth !== '')
+  const lowTreadTires = measuredTires.filter(t => {
+    const severity = getTreadSeverity(t.depth)
+    return severity === 'warn' || severity === 'critical'
+  })
+
   const handleSubmit = async () => {
     if (!selectedDriver || !selectedVehicle) return
     
@@ -98,6 +113,7 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
       time: now.toTimeString().split(' ')[0].slice(0, 5),
       mileage: parseInt(mileage) || 0,
       sections,
+      tireTreadDepths,
       notes: notes || undefined,
     }
     
@@ -460,6 +476,13 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
               />
             ))}
             
+            {currentSection.id === 'tires-wheels' && (
+              <TireTreadDepths
+                tires={tireTreadDepths}
+                onDepthChange={updateTreadDepth}
+              />
+            )}
+            
             <Separator className="my-4" />
             
             <div className="flex gap-3">
@@ -552,6 +575,45 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
               })}
             </div>
             
+            {/* Tire tread depth summary */}
+            {measuredTires.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Tire Tread Depth</h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {tireTreadDepths.map(tire => {
+                    const severity = getTreadSeverity(tire.depth)
+                    return (
+                      <div
+                        key={tire.id}
+                        className={`p-2 rounded-lg text-center border ${
+                          severity === 'critical'
+                            ? 'bg-red-50 border-red-200'
+                            : severity === 'warn'
+                              ? 'bg-amber-50 border-amber-200'
+                              : 'bg-muted border-transparent'
+                        }`}
+                      >
+                        <div className="text-[11px] text-muted-foreground">{tire.short}</div>
+                        <div className={`font-mono text-sm font-semibold ${
+                          severity === 'critical' ? 'text-red-700' : severity === 'warn' ? 'text-amber-700' : 'text-foreground'
+                        }`}>
+                          {tire.depth === '' ? '—' : `${tire.depth}/32`}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {lowTreadTires.length > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800">
+                      Low tread on {lowTreadTires.map(t => t.label).join(', ')}. Tires at or below {TREAD_MIN_LEGAL}/32&quot; are unsafe and must be replaced.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {/* Warning lights alert */}
             {sections.find(s => s.id === 'electrical-visibility')?.items.find(i => i.id === 'lights-warning')?.status === 'fail' && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -607,6 +669,87 @@ export function InspectionForm({ onComplete, onCancel }: InspectionFormProps) {
             </div>
           </CardContent>
         </Card>
+      )}
+    </div>
+  )
+}
+
+// Tire tread depth entry - measured in 32nds of an inch
+interface TireTreadDepthsProps {
+  tires: TireTreadDepth[]
+  onDepthChange: (tireId: string, depth: string) => void
+}
+
+function TireTreadDepths({ tires, onDepthChange }: TireTreadDepthsProps) {
+  const hasLow = tires.some(t => {
+    const severity = getTreadSeverity(t.depth)
+    return severity === 'warn' || severity === 'critical'
+  })
+
+  return (
+    <div className="border rounded-lg p-3 space-y-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <Ruler className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-sm">Tread Depth Measurements</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Enter depth in 32nds of an inch (e.g. 8 = 8/32&quot;). Leave blank if not measured.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        {tires.map(tire => {
+          const severity = getTreadSeverity(tire.depth)
+          return (
+            <div key={tire.id} className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="inline-flex items-center justify-center w-9 h-6 rounded bg-muted text-[11px] font-mono font-semibold text-muted-foreground">
+                  {tire.short}
+                </span>
+                <span className="text-sm truncate">{tire.label}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="--"
+                  value={tire.depth}
+                  onChange={(e) => onDepthChange(tire.id, e.target.value)}
+                  aria-label={`${tire.label} tread depth in 32nds of an inch`}
+                  className={`h-11 w-20 text-center text-base font-mono ${
+                    severity === 'critical'
+                      ? 'border-red-400 bg-red-50 text-red-700'
+                      : severity === 'warn'
+                        ? 'border-amber-400 bg-amber-50 text-amber-800'
+                        : ''
+                  }`}
+                />
+                <span className="text-xs text-muted-foreground font-mono w-6">/32</span>
+              </div>
+              <div className="w-16 text-right">
+                {severity === 'critical' && (
+                  <Badge variant="destructive" className="text-[10px]">Replace</Badge>
+                )}
+                {severity === 'warn' && (
+                  <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-700">Monitor</Badge>
+                )}
+                {severity === 'ok' && (
+                  <CheckCircle2 className="w-4 h-4 text-green-600 inline-block" />
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {hasLow && (
+        <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800">
+            Below {TREAD_MIN_WARN}/32&quot; needs monitoring; at or below {TREAD_MIN_LEGAL}/32&quot; the tire is below legal minimum and must be replaced. Mark Tire Condition as Fail and add notes.
+          </p>
+        </div>
       )}
     </div>
   )
